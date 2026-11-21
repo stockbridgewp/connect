@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>StockBridge – returning to your store</title>
+<style>body{font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:grid;place-items:center;min-height:90vh;margin:0;color:#1d2327}p{max-width:30em;text-align:center}</style>
+</head>
+<body>
+<p id="m">Returning you to your store…</p>
+<script>
+/*
+ * StockBridge OAuth relay. Square redirects here after the merchant approves access.
+ * The "state" value names the store's admin-post.php; this page forwards code + state there.
+ * Nothing is stored or sent anywhere else. The code is useless without the PKCE verifier,
+ * which only the store has.
+ */
+(function () {
+  var q = new URLSearchParams(location.search);
+  function fail(t) { document.getElementById('m').textContent = t; }
+  var s = (q.get('state') || '').replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) { s += '='; }
+  var j, u;
+  try { j = JSON.parse(atob(s)); u = new URL(j.u); } catch (e) { return fail('This link is not valid. Go back to your store and click "Connect with Square" again.'); }
+  if (!/^https?:$/.test(u.protocol) || !/\/wp-admin\/admin-post\.php$/.test(u.pathname)) {
+    return fail('This link is not valid. Go back to your store and click "Connect with Square" again.');
+  }
+  u.search = '';
+  u.searchParams.set('action', 'stockbridge_oauth_callback');
+  ['code', 'state', 'error', 'error_description'].forEach(function (k) {
+    var v = q.get(k); if (v) { u.searchParams.set(k, v); }
+  });
+  location.replace(u.toString());
+})();
+</script>
+<noscript><p>Please enable JavaScript to finish connecting, or go back to your store.</p></noscript>
+</body>
+</html>
